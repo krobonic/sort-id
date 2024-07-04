@@ -1,36 +1,26 @@
 import { randomString } from './random-string';
-import { ALPHABETS } from './alphabets';
 
 export type BaseSortIdParams = {
   prefix?: string;
   separator?: string;
-};
-
-export type GenerateRandomStringParams = {
+  time?: 'hrtime' | 'date';
   alphabet?: string;
-  numRandomChars: number;
+  randStrLength?: number;
+  randStrProvider?: () => string;
 };
 
-export type ProvideRandomStringParams = {
-  randomStrProvider: () => string;
-};
+export const sortId = (params: BaseSortIdParams): string => {
+  const ts = params.time === 'hrtime'
+    ? process.hrtime.bigint().toString(36)
+    : Date.now().toString(36);
 
-export type SortIdParams =
-  | (BaseSortIdParams & GenerateRandomStringParams)
-  | (BaseSortIdParams & ProvideRandomStringParams);
-
-export const sortId = (params: SortIdParams): string => {
-  const ts = Date.now().toString(36);
-
-  let randStr = '';
-  if ('alphabet' in params) {
-    randStr = randomString({
-      alphabet: params.alphabet,
-      length: params.numRandomChars,
-    });
-  } else if ('randomStrProvider' in params) {
-    randStr = params.randomStrProvider();
-  }
+  const randStr =
+    typeof params.randStrProvider !== 'undefined'
+      ? params.randStrProvider()
+      : randomString({
+          alphabet: params.alphabet,
+          length: params.randStrLength || 5,
+        });
 
   let id = `${ts}${randStr}`;
   if (params.prefix) {
@@ -39,15 +29,17 @@ export const sortId = (params: SortIdParams): string => {
   return id;
 };
 
-(() => {
-  while (true) {
-    console.log(
-      sortId({
-        prefix: 'u',
-        separator: '#',
-        numRandomChars: 5,
-        alphabet: ALPHABETS.ALPHANUMERIC_LOWERCASE,
-      }),
-    );
-  }
-})();
+// (() => {
+//   let count = 1;
+//   while (true) {
+//     console.log(
+//       sortId({
+//         prefix: 'u',
+//         separator: '_',
+//         time: 'hrtime',
+//       }),
+//       count,
+//     );
+//     count++;
+//   }
+// })();

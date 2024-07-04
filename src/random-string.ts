@@ -5,17 +5,17 @@ export type RandomStringParams = {
   alphabet?: string;
 };
 
+/**
+ * @todo Use crypto
+ */
 export const randomString = ({
   length,
   alphabet,
 }: RandomStringParams): string => {
-  const characters =
-    alphabet ||
-    Alphabets.ALPHANUMERIC;
-  let result = "";
-  const charactersLength = characters.length;
+  const characters = alphabet || Alphabets.ALPHANUMERIC;
+  let result = '';
   for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
 };

@@ -1,7 +1,7 @@
 {
-  "name": "sortid",
-  "version": "0.0.8",
-  "description": "",
+  "name": "sort-id",
+  "version": "0.0.3",
+  "description": "Time sortable, type-prefixed IDs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
@@ -11,6 +11,7 @@
     "prepublishOnly": "npm run build",
     "test": "jest"
   },
+  "repository": "callumthomson/sort-id",
   "author": "Callum Thomson",
   "license": "MIT",
   "devDependencies": {

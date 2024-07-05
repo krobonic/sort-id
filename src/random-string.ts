@@ -1,4 +1,4 @@
-import { Alphabets } from './alphabets';
+import { ALPHANUMERIC_LOWERCASE } from './alphabets';
 
 export type RandomStringParams = {
   length: number;
@@ -12,7 +12,7 @@ export const randomString = ({
   length,
   alphabet,
 }: RandomStringParams): string => {
-  const characters = alphabet || Alphabets.ALPHANUMERIC;
+  const characters = alphabet || ALPHANUMERIC_LOWERCASE;
   let result = '';
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));

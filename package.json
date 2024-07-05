@@ -1,13 +1,23 @@
 {
   "name": "sort-id",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Time sortable, type-prefixed IDs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
   "type": "module",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./alphabets": {
+      "default": "./dist/alphabets.js",
+      "types": "./dist/alphabets.d.ts"
+    }
+  },
   "scripts": {
-    "build": "rm -rf dist/ && tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js",
+    "build": "rm -rf dist/ && tsc && esbuild 'src/index.ts' 'src/alphabets.ts' --bundle --format=esm --outdir=dist/",
     "test": "jest"
   },
   "repository": "callumthomson/sort-id",

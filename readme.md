@@ -62,7 +62,7 @@ console.log(userId); // -> user-ly765nhbPc0zR
 ### With a custom length
 
 Customises the number of characters in the random portion of the ID. The timestamp portion is always
-the same length (depending on the `time` setting).
+the same length.
 
 ```ts
 const userId = sortId({
@@ -107,7 +107,7 @@ the `alphabet` and `randStrLength` properties are ignored.
 ```ts
 const userId = sortId({
   prefix: 'user',
-  randStrProvider: () => myRandomStringFunction(),
+  randStrProvider: () => 'my_random_string'
 });
-console.log(userId); // -> user_ly75y9bb<something_random>
+console.log(userId); // -> user_ly8tcd94my_random_string
 ```

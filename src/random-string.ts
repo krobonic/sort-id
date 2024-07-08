@@ -6,7 +6,7 @@ export type RandomStringParams = {
 };
 
 /**
- * @todo Use crypto
+ * @todo Use secure crypto random instead of Math.random()
  */
 export const randomString = ({
   length,

@@ -14,12 +14,15 @@ export const sortId = (params?: SortIdParams): string => {
       ? params.randStrProvider()
       : randomString({
           alphabet: params?.alphabet,
-          length: typeof params?.randStrLength !== 'undefined' ? params.randStrLength : 5,
+          length:
+            typeof params?.randStrLength !== 'undefined'
+              ? params.randStrLength
+              : 5,
         });
 
-  let id = `${Date.now().toString(36)}${randStr}`;
+  const id = `${Date.now().toString(36)}${randStr}`;
   if (params?.prefix) {
-    id = `${params.prefix}${params.separator || '_'}${id}`;
+    return `${params.prefix}${params.separator || '_'}${id}`;
   }
   return id;
 };

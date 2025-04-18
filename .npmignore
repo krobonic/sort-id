@@ -3,4 +3,5 @@ node_modules/
 src/
 
 .prettierrc
+esbuild.js
 tsconfig.json

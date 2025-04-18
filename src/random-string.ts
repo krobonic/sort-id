@@ -1,4 +1,5 @@
 import { ALPHANUMERIC_LOWERCASE } from './alphabets';
+import { randomInt } from 'crypto'
 
 export type RandomStringParams = {
   length: number;
@@ -15,7 +16,7 @@ export const randomString = ({
   const characters = alphabet || ALPHANUMERIC_LOWERCASE;
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
+    result += characters.charAt(randomInt(characters.length));
   }
   return result;
 };

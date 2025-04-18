@@ -6,6 +6,7 @@ esbuild
     outdir: 'dist',
     bundle: true,
     format: 'esm',
+    platform: 'node',
   })
   .then((result) => {
     console.log(result);

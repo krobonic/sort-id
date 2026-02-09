@@ -2,27 +2,26 @@ import { randomString } from './random-string';
 
 export type SortIdParams = {
   prefix?: string;
-  separator?: string;
   alphabet?: string;
   randStrLength?: number;
-  randStrProvider?: () => string;
+  radix?: number;
 };
 
-export const sortId = (params?: SortIdParams): string => {
-  const randStr =
-    typeof params?.randStrProvider !== 'undefined'
-      ? params.randStrProvider()
-      : randomString({
-          alphabet: params?.alphabet,
-          length:
-            typeof params?.randStrLength !== 'undefined'
-              ? params.randStrLength
-              : 5,
-        });
+const DEFAULT_RAN_STR_LENGTH = 5;
+const DEFAULT_RADIX = 36;
 
-  const id = `${Date.now().toString(36)}${randStr}`;
+export const sortId = (params?: SortIdParams): string => {
+  const randStr = randomString({
+    alphabet: params?.alphabet,
+    length:
+      typeof params?.randStrLength !== 'undefined'
+        ? params.randStrLength
+        : DEFAULT_RAN_STR_LENGTH,
+  });
+
+  const id = `${Date.now().toString(params?.radix || DEFAULT_RADIX)}${randStr}`;
   if (params?.prefix) {
-    return `${params.prefix}${params.separator || '_'}${id}`;
+    return `${params.prefix}${id}`;
   }
   return id;
 };

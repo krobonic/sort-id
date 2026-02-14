@@ -1,7 +1,8 @@
 .idea/
 node_modules/
 src/
+.env
 
-.prettierrc
-esbuild.js
+biome.json
+bunfig.toml
 tsconfig.json

@@ -1,22 +1,20 @@
 import { ALPHANUMERIC_LOWERCASE } from './alphabets';
-import { randomInt } from 'crypto'
+import { randomBytes } from 'crypto';
 
 export type RandomStringParams = {
   length: number;
   alphabet?: string;
 };
 
-/**
- * @todo Use secure crypto random instead of Math.random()
- */
+const DEFAULT_ALPHABET = ALPHANUMERIC_LOWERCASE;
+
 export const randomString = ({
   length,
   alphabet,
 }: RandomStringParams): string => {
-  const characters = alphabet || ALPHANUMERIC_LOWERCASE;
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(randomInt(characters.length));
-  }
-  return result;
+  const characters = alphabet || DEFAULT_ALPHABET;
+
+  return Array.from(randomBytes(length), (byte) =>
+    characters[byte % characters.length]
+  ).join('');
 };

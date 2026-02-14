@@ -1,13 +1,13 @@
 # sort-id
 
-Time sortable, type-prefixed IDs. Each ID consists of a type prefix, followed by a base 36
+Time sortable, type-prefixed IDs. Each ID consists of a type prefix, followed by an
 encoded timestamp (which can be alphabetically sorted), and finally a random string.
 
 Examples
 
 ```ts
-user_ly7512nco0QIs; // Generated first, sorts first alphabetically
-user_ly751tfxst6Vw;
+userly7512nco0QIs; // Generated first, sorts first alphabetically
+userly751tfxst6Vw;
 ```
 
 ## Why
@@ -20,9 +20,10 @@ it easy to identify what type of resource the ID identifies at a glance.
 ### Timestamp Prefixing
 
 After the optional type prefix comes the timestamp. This is the time in milliseconds since the
-UNIX epoch. The value is converted to a string using base36, which reduces it from 13 to 8
-characters. This means that all IDs can be sorted alphabetically in the order in which they were
-created. A limitation is that IDs created during the same millisecond may not sort correctly.
+UNIX epoch. The value is converted to a string using a radix (base), which defaults to base36.
+Base36 reduces the timestamp from 13 to 8 characters. This means that all IDs can be sorted
+alphabetically in the order in which they were created. A limitation is that IDs created during the
+same millisecond may not sort correctly.
 
 ## Installation
 
@@ -47,21 +48,9 @@ identifies.
 
 ```ts
 const userId = sortId({
-  prefix: 'user',
+  prefix: 'user_',
 });
 console.log(userId); // -> user_ly757uw3998e2
-```
-
-### With a customised prefix separator
-
-Generates an ID with a customised prefix separation character.
-
-```ts
-const userId = sortId({
-  prefix: 'user',
-  separator: '-',
-});
-console.log(userId); // -> user-ly765nhbPc0zR
 ```
 
 ### Without a prefix
@@ -80,7 +69,7 @@ the same length.
 
 ```ts
 const userId = sortId({
-  prefix: 'user',
+  prefix: 'user_',
   randStrLength: 15,
 });
 console.log(userId); // -> user_ly9c8a9x9owvod33sqoiezw
@@ -88,8 +77,8 @@ console.log(userId); // -> user_ly9c8a9x9owvod33sqoiezw
 
 ### With a custom alphabet
 
-Customises the alphabet used for the random portion of the ID. The timestamp portion is always
-base36 (alphanumeric lowercase), and the default alphabet is also alphanumeric lowercase.
+Customises the alphabet used for the random portion of the ID. The default radix for the timestamp
+portion is base36 (alphanumeric lowercase), and the default alphabet is also alphanumeric lowercase.
 
 #### Use a built-in alphabet:
 
@@ -98,7 +87,7 @@ import { sortId } from 'sort-id';
 import { ALPHANUMERIC_UPPERCASE } from 'sort-id/alphabets';
 
 const userId = sortId({
-  prefix: 'user',
+  prefix: 'user_',
   alphabet: ALPHANUMERIC_UPPERCASE,
 });
 console.log(userId); // -> user_ly76dhmoPM3IP
@@ -108,21 +97,20 @@ console.log(userId); // -> user_ly76dhmoPM3IP
 
 ```ts
 const userId = sortId({
-  prefix: 'user',
+  prefix: 'user_',
   alphabet: '!@£$',
 });
 console.log(userId); // -> user_ly75rgn1$$£$£
 ```
 
-### With a custom random string provider
+### With a custom radix
 
-Overwrites the random string function. Note that when using a custom random string provider,
-the `alphabet` and `randStrLength` properties are ignored.
+Customises the radix used for encoding the timestamp. Defaults to 36.
 
 ```ts
 const userId = sortId({
-  prefix: 'user',
-  randStrProvider: () => 'my_random_string',
+  prefix: 'user_',
+  radix: 10,
 });
-console.log(userId); // -> user_ly8tcd94my_random_string
+console.log(userId); // -> user_1723456789012abcde
 ```

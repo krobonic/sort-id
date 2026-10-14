@@ -21,9 +21,9 @@
     }
   },
   "scripts": {
-    "lint": "biome check src",
-    "lint:write": "biome check src --write",
-    "fmt": "biome format src --write",
+    "lint": "biome check src tests",
+    "lint:write": "biome check src tests --write",
+    "fmt": "biome format src tests --write",
     "build": "rm -rf dist/ && tsc && bun run src/build.ts",
     "prepack": "bun run build && node tests/package-smoke.mjs",
     "test:package": "npm run prepack",

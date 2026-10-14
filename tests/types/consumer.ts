@@ -3,16 +3,16 @@ import {
 	randomString,
 	type SortIdParams,
 	sortId,
-} from "sort-id";
+} from 'sort-id';
 import {
 	ALPHANUMERIC,
 	ALPHANUMERIC_LOWERCASE,
 	ALPHANUMERIC_UPPERCASE,
 	NUMERIC,
-} from "sort-id/alphabets";
+} from 'sort-id/alphabets';
 
 const sortIdParams: SortIdParams = {
-	prefix: "user_",
+	prefix: 'user_',
 	alphabet: ALPHANUMERIC_LOWERCASE,
 	randStrLength: 12,
 };
@@ -33,7 +33,7 @@ export const strings: string[] = [
 // @ts-expect-error length is required
 randomString({});
 // @ts-expect-error randStrLength must be numeric
-sortId({ randStrLength: "12" });
+sortId({ randStrLength: '12' });
 // @ts-expect-error sortId returns a string
 export const numericId: number = sortId();
 // @ts-expect-error randomString returns a string

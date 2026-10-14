@@ -2,14 +2,14 @@
 
 Time sortable, type-prefixed IDs. Each ID consists of a type prefix, followed by an
 encoded timestamp (which can be alphabetically sorted), and finally a random string.
-The random suffix now defaults to 16 characters (previously 5). Explicit
+The random suffix now defaults to 12 characters (previously 5). Explicit
 `randStrLength` values are unchanged; use `randStrLength: 5` to retain the previous length.
 
 Examples
 
 ```ts
-user00ly7512nc998e2abcde123456; // Generated first, sorts first alphabetically
-user00ly751tfxst6vwabcde123456;
+user00ly7512nc998e2abcde12; // Generated first, sorts first alphabetically
+user00ly751tfxst6vwabcde12;
 ```
 
 ## Why
@@ -36,6 +36,30 @@ throw `RangeError`.
 This changes the ID format: existing unpadded IDs should not be mixed with padded IDs
 when relying on lexical ordering. Consumers that parse IDs should use the new timestamp width.
 
+### Random suffix length and collisions
+
+The default payload is 22 characters: a 10-character base36 timestamp plus a
+12-character random suffix, excluding the optional prefix. This balances compactness
+with collision resistance. Explicit `randStrLength` values still control suffix length.
+
+With the default 36-character alphabet, there are `36 ** 12` possible suffixes
+(about `4.74 × 10^18`, or 62 bits of randomness). Assuming independent, uniform
+random draws, the birthday approximation for at least one collision among `n`
+IDs sharing the same timestamp, prefix, radix, and alphabet is
+`1 - exp(-n * (n - 1) / (2 * 36 ** 12))`. When the probability is small, this is
+approximately `n * (n - 1) / (2 * 36 ** 12)`: about `1.05 × 10^-13` for 1,000 IDs
+in one millisecond, or `1.05 × 10^-7` for 1,000,000 IDs in one millisecond.
+
+Count all generators sharing the same ID namespace together, including multiple
+processes and machines. Different timestamps produce different IDs, but clock
+rollback or repeated timestamps add to the same collision bucket. These examples
+are per timestamp, not lifetime guarantees: sum the small per-timestamp probabilities
+to estimate cumulative risk. For a custom alphabet of size `A` and suffix length
+`L`, replace `36 ** 12` with `A ** L`; smaller alphabets or shorter suffixes increase
+risk. A zero-length suffix or single-character alphabet cannot distinguish IDs
+within the same timestamp. Use a longer explicit suffix for higher volumes or a
+lower collision budget, and enforce uniqueness where required.
+
 ## Installation
 
 ```shell
@@ -61,7 +85,7 @@ identifies.
 const userId = sortId({
   prefix: 'user_',
 });
-console.log(userId); // -> user_00ly757uw3998e2abcde123456
+console.log(userId); // -> user_00ly757uw3998e2abcde12
 ```
 
 ### Without a prefix
@@ -70,7 +94,7 @@ Generates an ID without any type prefix.
 
 ```ts
 const userId = sortId();
-console.log(userId); // -> 00ly75c94jtosoqabcde123456
+console.log(userId); // -> 00ly75c94jtosoqabcde12
 ```
 
 ### With a custom random string length
@@ -101,7 +125,7 @@ const userId = sortId({
   prefix: 'user_',
   alphabet: ALPHANUMERIC_UPPERCASE,
 });
-console.log(userId); // -> user_00ly76dhmoPM3IPABCDE123456
+console.log(userId); // -> user_00ly76dhmoPM3IPABCDE12
 ```
 
 #### Bring your own alphabet:
@@ -111,7 +135,7 @@ const userId = sortId({
   prefix: 'user_',
   alphabet: '!@£$',
 });
-console.log(userId); // -> user_00ly75rgn1$$£$£!@£$!@£$!@£
+console.log(userId); // -> user_00ly75rgn1$$£$£!@£$!@£
 ```
 
 ### With a custom radix
@@ -136,13 +160,13 @@ const userId = sortId({
   prefix: 'user_',
   radix: 10,
 });
-console.log(userId); // -> user_0001723456789012abcde1234567890f
+console.log(userId); // -> user_0001723456789012abcde1234567
 ```
 
 ### Supported random inputs
 
 `randomString({ length, alphabet? })` is also exported from `sort-id`.
-`length` is required; `sortId` uses `randStrLength`, defaulting to 16.
+`length` is required; `sortId` uses `randStrLength`, defaulting to 12.
 Both lengths must be numeric integers from 0 through the runtime's
 `node:buffer` `constants.MAX_STRING_LENGTH` (inclusive). Zero produces an empty
 random suffix. Negative, fractional, non-finite, out-of-range, and non-number

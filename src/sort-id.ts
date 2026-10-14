@@ -7,7 +7,7 @@ export type SortIdParams = {
 	radix?: number;
 };
 
-const DEFAULT_RAN_STR_LENGTH = 16;
+const DEFAULT_RAN_STR_LENGTH = 12;
 const DEFAULT_RADIX = 36;
 const MAX_TIMESTAMP = DEFAULT_RADIX ** 10 - 1;
 

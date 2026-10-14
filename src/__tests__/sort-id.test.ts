@@ -96,12 +96,12 @@ describe("sortId", () => {
 		const result = sortId();
 		expect(result).toBeDefined();
 		expect(typeof result).toBe("string");
-		expect(result.length).toBeGreaterThan(0);
+		expect(result).toHaveLength(22);
 	});
 
 	test("generates an ID without prefix (timestamp + random)", () => {
 		const result = sortId();
-		// Should be base36 timestamp + 16 random chars (default)
+		// Should be base36 timestamp + 12 random chars (default)
 		expect(result).toMatch(/^[a-z0-9]+$/);
 	});
 
@@ -112,7 +112,7 @@ describe("sortId", () => {
 	});
 
 	test.each([
-		0, 1, 5, 10, 20,
+		0, 1, 5, 10, 16, 20,
 	])("preserves an explicit random string length of %i", (randStrLength) => {
 		const timestamp = 1723456789012;
 		const now = spyOn(Date, "now").mockReturnValue(timestamp);
@@ -135,7 +135,7 @@ describe("sortId", () => {
 		{ prefix: "user_" },
 		{ alphabet: NUMERIC },
 		{ radix: 10 },
-	])("uses 16 random characters by default with %j", (params) => {
+	])("uses 12 random characters by default with %j", (params) => {
 		const timestamp = 1723456789012;
 		const now = spyOn(Date, "now").mockReturnValue(timestamp);
 		try {
@@ -143,7 +143,7 @@ describe("sortId", () => {
 			const timestampPart = `${params?.prefix ?? ""}${timestamp.toString(params?.radix ?? 36).padStart((36 ** 10 - 1).toString(params?.radix ?? 36).length, "0")}`;
 			expect(result).toStartWith(timestampPart);
 			expect(result.slice(timestampPart.length)).toMatch(
-				params?.alphabet === NUMERIC ? /^[0-9]{16}$/ : /^[a-z0-9]{16}$/,
+				params?.alphabet === NUMERIC ? /^[0-9]{12}$/ : /^[a-z0-9]{12}$/,
 			);
 		} finally {
 			now.mockRestore();
@@ -217,9 +217,9 @@ describe("sortId", () => {
 
 	test("generates an ID with custom radix for timestamp", () => {
 		const result = sortId({ radix: 10 });
-		// Should be numeric timestamp + 16 random chars
+		// Should be numeric timestamp + 12 random chars
 		// Decimal timestamps are padded to 16 characters
-		expect(result).toHaveLength(16 + 16);
+		expect(result).toHaveLength(16 + 12);
 		expect(result).toMatch(/^[0-9]+[a-z0-9]+$/);
 	});
 });

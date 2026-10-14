@@ -1,6 +1,6 @@
 import { constants } from "node:buffer";
 import { randomBytes } from "node:crypto";
-import { ALPHANUMERIC_LOWERCASE } from "./alphabets";
+import { ALPHANUMERIC_LOWERCASE } from "./alphabets.js";
 
 export type RandomStringParams = {
 	/** Integer from 0 through node:buffer constants.MAX_STRING_LENGTH. */

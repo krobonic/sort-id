@@ -11,12 +11,12 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./alphabets": {
-      "default": "./dist/alphabets.js",
-      "types": "./dist/alphabets.d.ts"
+      "types": "./dist/alphabets.d.ts",
+      "default": "./dist/alphabets.js"
     }
   },
   "scripts": {
@@ -24,7 +24,8 @@
     "lint:write": "biome check src/**/*.ts --write",
     "fmt": "biome format src/**/*.ts --write",
     "build": "rm -rf dist/ && tsc && bun run src/build.ts",
-    "test": "bun test",
+    "test": "bun test && bun run test:types",
+    "test:types": "bun run build && tsc -p tests/types/tsconfig.nodenext.json && tsc -p tests/types/tsconfig.bundler.json",
     "npm:publish": "bun publish"
   },
   "devDependencies": {

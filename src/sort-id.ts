@@ -1,4 +1,4 @@
-import { randomString } from "./random-string";
+import { randomString } from "./random-string.js";
 
 export type SortIdParams = {
 	prefix?: string;

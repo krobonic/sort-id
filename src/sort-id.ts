@@ -1,4 +1,4 @@
-import { randomString } from "./random-string.js";
+import { randomString } from './random-string.js';
 
 export type SortIdParams = {
 	prefix?: string;
@@ -23,12 +23,12 @@ export const sortId = (params?: SortIdParams): string => {
 	}
 	const encodedTimestamp = timestamp
 		.toString(36)
-		.padStart(TIMESTAMP_WIDTH, "0");
+		.padStart(TIMESTAMP_WIDTH, '0');
 
 	const randStr = randomString({
 		alphabet: params?.alphabet,
 		length:
-			typeof params?.randStrLength !== "undefined"
+			typeof params?.randStrLength !== 'undefined'
 				? params.randStrLength
 				: DEFAULT_RAN_STR_LENGTH,
 	});

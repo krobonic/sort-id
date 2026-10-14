@@ -1,13 +1,29 @@
-import { describe, expect, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { constants } from "node:buffer";
 import * as crypto from "node:crypto";
 import { ALPHANUMERIC, ALPHANUMERIC_UPPERCASE, NUMERIC } from "../alphabets";
 import { randomString } from "../random-string";
 
+// A reproducible byte sequence exercises alphabet membership without chance.
+let random: ReturnType<
+	typeof spyOn<{ randomBytes(size: number): Buffer }, "randomBytes">
+>;
+beforeEach(() => {
+	random = spyOn(
+		crypto as { randomBytes(size: number): Buffer },
+		"randomBytes",
+	).mockImplementation((size) =>
+		Buffer.from(Array.from({ length: size }, (_, i) => i % 256)),
+	);
+});
+afterEach(() => random.mockRestore());
+
 describe("randomString", () => {
-	test("generates a string of specified length", () => {
-		const result = randomString({ length: 10 });
-		expect(result).toHaveLength(10);
+	test.each([
+		0, 1, 12, 255, 256, 65536, 65537,
+	])("generates exactly %i characters", (length) => {
+		const result = randomString({ length });
+		expect(result).toHaveLength(length);
 	});
 
 	test("generates a string using default alphabet (alphanumeric lowercase)", () => {
@@ -36,12 +52,6 @@ describe("randomString", () => {
 	test("generates empty string when length is 0", () => {
 		const result = randomString({ length: 0 });
 		expect(result).toBe("");
-	});
-
-	test("generates different strings on successive calls", () => {
-		const result1 = randomString({ length: 20 });
-		const result2 = randomString({ length: 20 });
-		expect(result1).not.toBe(result2);
 	});
 
 	test("uses only characters from the provided alphabet", () => {

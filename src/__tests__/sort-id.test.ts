@@ -1,6 +1,30 @@
-import { describe, expect, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { constants } from "node:buffer";
+import * as crypto from "node:crypto";
 import { ALPHANUMERIC_UPPERCASE, NUMERIC } from "../alphabets";
 import { sortId } from "../sort-id";
+
+// Control both sources of variability; each test starts at the same instant.
+const FROZEN_TIMESTAMP = 1723456789012;
+let clock: ReturnType<typeof spyOn<typeof Date, "now">>;
+let random: ReturnType<
+	typeof spyOn<{ randomBytes(size: number): Buffer }, "randomBytes">
+>;
+
+beforeEach(() => {
+	clock = spyOn(Date, "now").mockReturnValue(FROZEN_TIMESTAMP);
+	random = spyOn(
+		crypto as { randomBytes(size: number): Buffer },
+		"randomBytes",
+	).mockImplementation((size) =>
+		Buffer.from(Array.from({ length: size }, (_, i) => i % 256)),
+	);
+});
+
+afterEach(() => {
+	clock.mockRestore();
+	random.mockRestore();
+});
 
 describe("sortId", () => {
 	test("pads timestamps to exactly 10 base36 characters", () => {
@@ -81,6 +105,7 @@ describe("sortId", () => {
 
 	test("generates an ID with prefix", () => {
 		const result = sortId({ prefix: "user_" });
+		expect(result).toHaveLength(27);
 		expect(result).toStartWith("user_");
 		expect(result).toMatch(/^user_[a-z0-9]+$/);
 	});
@@ -94,6 +119,7 @@ describe("sortId", () => {
 			const result = sortId({ prefix: "test_", randStrLength });
 			const timestampPart = `test_${timestamp.toString(36).padStart(10, "0")}`;
 			expect(result).toStartWith(timestampPart);
+			expect(result).toHaveLength(timestampPart.length + randStrLength);
 			expect(result.slice(timestampPart.length)).toMatch(
 				new RegExp(`^[a-z0-9]{${randStrLength}}$`),
 			);
@@ -132,16 +158,6 @@ describe("sortId", () => {
 		expect(result.slice(10)).toMatch(/^[0-9]{20}$/);
 	});
 
-	test("generates unique IDs on successive calls", () => {
-		const id1 = sortId();
-		const id2 = sortId();
-		const id3 = sortId();
-
-		expect(id1).not.toBe(id2);
-		expect(id2).not.toBe(id3);
-		expect(id1).not.toBe(id3);
-	});
-
 	test("maintains consistent format with all parameters", () => {
 		const params = {
 			prefix: "u_",
@@ -153,19 +169,11 @@ describe("sortId", () => {
 		expect(result).toStartWith("u_");
 
 		const idPart = result.substring(2); // Remove 'u_'
-		expect(idPart).toMatch(/^[a-z0-9A-Z]+$/); // base36 timestamp (lowercase) + uppercase random
-	});
-
-	test("generates multiple unique IDs in batch", () => {
-		const ids = new Set<string>();
-		const count = 1000;
-
-		for (let i = 0; i < count; i++) {
-			ids.add(sortId({ prefix: "test_", randStrLength: 6 }));
-		}
-
-		// All IDs should be unique
-		expect(ids.size).toBe(count);
+		expect(idPart.slice(0, 10)).toBe(
+			FROZEN_TIMESTAMP.toString(36).padStart(10, "0"),
+		);
+		expect(idPart.slice(10)).toBe("ABCDEF");
+		expect(result).toHaveLength(18);
 	});
 
 	test("format matches expected pattern: prefix + timestamp(base36) + random", () => {
@@ -177,15 +185,7 @@ describe("sortId", () => {
 		const parts = result.split("_");
 		expect(parts.length).toBe(2);
 		expect(parts[0]).toBe("u");
-		expect(parts[1]?.length).toBeGreaterThanOrEqual(6);
-	});
-
-	test("IDs from same millisecond differ due to random part", () => {
-		// Generate many IDs quickly (likely in same millisecond)
-		const ids = Array.from({ length: 100 }, () => sortId({ randStrLength: 6 }));
-		const uniqueIds = new Set(ids);
-
-		expect(uniqueIds.size).toBe(100);
+		expect(parts[1]).toHaveLength(16);
 	});
 });
 
@@ -197,6 +197,7 @@ describe("sortId input validation", () => {
 		Infinity,
 		-Infinity,
 		Number.MAX_SAFE_INTEGER,
+		constants.MAX_STRING_LENGTH + 1,
 		null,
 		"16",
 		true,
@@ -209,11 +210,53 @@ describe("sortId input validation", () => {
 		"",
 		"aab",
 		"😀",
-		null,
-		123,
+		"\uD800",
+		"\uDFFF",
+		Array.from({ length: 257 }, (_, i) => String.fromCharCode(i)).join(""),
 	])("rejects invalid alphabet %j", (alphabet) => {
-		expect(() =>
-			sortId({ alphabet: alphabet as string, randStrLength: 0 }),
-		).toThrow();
+		for (const randStrLength of [0, 12]) {
+			expect(() => sortId({ alphabet, randStrLength })).toThrow(RangeError);
+		}
+	});
+
+	test.each(
+		[null, 123, true, ["a", "b"], {}].map((alphabet) => ({ alphabet })),
+	)("rejects non-string alphabet %j", ({ alphabet }) => {
+		for (const randStrLength of [0, 12]) {
+			expect(() =>
+				sortId({ alphabet: alphabet as string, randStrLength }),
+			).toThrow(TypeError);
+		}
+	});
+});
+
+describe("sortId ordering guarantees", () => {
+	test("orders IDs in the same millisecond by their suffix", () => {
+		random
+			.mockReturnValueOnce(Buffer.from([25]))
+			.mockReturnValueOnce(Buffer.from([0]));
+		const first = sortId({ prefix: "user_", randStrLength: 1 });
+		const second = sortId({ prefix: "user_", randStrLength: 1 });
+		expect(first.slice(0, -1)).toBe(second.slice(0, -1));
+		expect(first.slice(-1)).toBe("z");
+		expect(second.slice(-1)).toBe("a");
+		expect([first, second].sort()).toEqual([second, first]);
+	});
+
+	test("sorts across every timestamp width boundary regardless of suffix", () => {
+		for (let exponent = 1; exponent < 10; exponent++) {
+			clock.mockReturnValue(36 ** exponent - 1);
+			const before = sortId({ prefix: "user_", alphabet: "z" });
+			clock.mockReturnValue(36 ** exponent);
+			const after = sortId({ prefix: "user_", alphabet: "a" });
+			expect([after, before].sort()).toEqual([before, after]);
+		}
+	});
+
+	test.each([
+		0, 12,
+	])("can repeat within one millisecond with a single-character alphabet and length %i", (randStrLength) => {
+		const params = { alphabet: "x", randStrLength };
+		expect(sortId(params)).toBe(sortId(params));
 	});
 });

@@ -8,8 +8,8 @@ The random suffix now defaults to 16 characters (previously 5). Explicit
 Examples
 
 ```ts
-userly7512nc998e2abcde123456; // Generated first, sorts first alphabetically
-userly751tfxst6vwabcde123456;
+user00ly7512nc998e2abcde123456; // Generated first, sorts first alphabetically
+user00ly751tfxst6vwabcde123456;
 ```
 
 ## Why
@@ -23,9 +23,18 @@ it easy to identify what type of resource the ID identifies at a glance.
 
 After the optional type prefix comes the timestamp. This is the time in milliseconds since the
 UNIX epoch. The value is converted to a string using a radix (base), which defaults to base36.
-Base36 reduces the timestamp from 13 to 8 characters. This means that all IDs can be sorted
-alphabetically in the order in which they were created. A limitation is that IDs created during the
-same millisecond may not sort correctly.
+Timestamps are zero-padded to a fixed width: 10 characters in base36 by default.
+For example, timestamp 35 becomes `000000000z` and timestamp 36 becomes `0000000010`,
+so lexical ordering remains chronological across digit-width boundaries. IDs with the same
+prefix and radix sort by timestamp; IDs created during the same millisecond are ordered by
+the random suffix. Clock changes can also affect creation order.
+
+Supported timestamps are integer milliseconds from 0 through 3,656,158,440,062,975
+(`36 ** 10 - 1`), inclusive. Negative, fractional, non-finite, and larger timestamps
+throw `RangeError`.
+
+This changes the ID format: existing unpadded IDs should not be mixed with padded IDs
+when relying on lexical ordering. Consumers that parse IDs should use the new timestamp width.
 
 ## Installation
 
@@ -52,7 +61,7 @@ identifies.
 const userId = sortId({
   prefix: 'user_',
 });
-console.log(userId); // -> user_ly757uw3998e2abcde123456
+console.log(userId); // -> user_00ly757uw3998e2abcde123456
 ```
 
 ### Without a prefix
@@ -61,7 +70,7 @@ Generates an ID without any type prefix.
 
 ```ts
 const userId = sortId();
-console.log(userId); // -> ly75c94jtosoqabcde123456
+console.log(userId); // -> 00ly75c94jtosoqabcde123456
 ```
 
 ### With a custom random string length
@@ -74,7 +83,7 @@ const userId = sortId({
   prefix: 'user_',
   randStrLength: 15,
 });
-console.log(userId); // -> user_ly9c8a9x9owvod33sqoiezw
+console.log(userId); // -> user_00ly9c8a9x9owvod33sqoiezw
 ```
 
 ### With a custom alphabet
@@ -92,7 +101,7 @@ const userId = sortId({
   prefix: 'user_',
   alphabet: ALPHANUMERIC_UPPERCASE,
 });
-console.log(userId); // -> user_ly76dhmoPM3IPABCDE123456
+console.log(userId); // -> user_00ly76dhmoPM3IPABCDE123456
 ```
 
 #### Bring your own alphabet:
@@ -102,17 +111,30 @@ const userId = sortId({
   prefix: 'user_',
   alphabet: '!@£$',
 });
-console.log(userId); // -> user_ly75rgn1$$£$£!@£$!@£$!@£
+console.log(userId); // -> user_00ly75rgn1$$£$£!@£$!@£$!@£
 ```
 
 ### With a custom radix
 
-Customises the radix used for encoding the timestamp. Defaults to 36.
+Customises the radix used for encoding the timestamp. Defaults to 36. Supported radices
+are integers from 2 through 36; other values throw `RangeError`. Each radix uses the
+number of digits needed to encode the shared maximum timestamp (`36 ** 10 - 1`),
+with leading zeroes added to shorter values. Changing the radix changes the width:
+
+| Radix | Timestamp width |
+| --- | --- |
+| 2 | 52 |
+| 8 | 18 |
+| 10 | 16 |
+| 16 | 13 |
+| 36 | 10 |
+
+For any supported radix, the width is `(36 ** 10 - 1).toString(radix).length`.
 
 ```ts
 const userId = sortId({
   prefix: 'user_',
   radix: 10,
 });
-console.log(userId); // -> user_1723456789012abcde1234567890f
+console.log(userId); // -> user_0001723456789012abcde1234567890f
 ```

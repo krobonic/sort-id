@@ -2,8 +2,7 @@
 
 Time sortable, type-prefixed IDs. Each ID consists of a type prefix, followed by an
 encoded timestamp (which can be alphabetically sorted), and finally a random string.
-The random suffix now defaults to 12 characters (previously 5). Explicit
-`randStrLength` values are unchanged; use `randStrLength: 5` to retain the previous length.
+The random suffix defaults to 12 characters.
 
 Examples
 
@@ -33,15 +32,11 @@ Supported timestamps are integer milliseconds from 0 through 3,656,158,440,062,9
 (`36 ** 10 - 1`), inclusive. Negative, fractional, non-finite, and larger timestamps
 throw `RangeError`.
 
-This changes the ID format: existing unpadded IDs should not be mixed with padded IDs
-when relying on lexical ordering. Consumers that parse IDs should use the new timestamp width.
-The `radix` option has been removed; all timestamps now use base36.
-
 ### Random suffix length and collisions
 
 The default payload is 22 characters: a 10-character base36 timestamp plus a
 12-character random suffix, excluding the optional prefix. This balances compactness
-with collision resistance. Explicit `randStrLength` values still control suffix length.
+with collision resistance. Set `randStrLength` to customise the suffix length.
 
 With the default 36-character alphabet, there are `36 ** 12` possible suffixes
 (about `4.74 × 10^18`, or 62 bits of randomness). Assuming independent, uniform

@@ -1,10 +1,13 @@
-Bun.build({
+const result = await Bun.build({
   entrypoints: ['src/index.ts', 'src/alphabets.ts'],
   outdir: 'dist',
   format: 'esm',
   target: 'node'
-})
-  .then((result) => {
-    console.log(result);
-    console.log('Completed Build');
-  });
+});
+
+if (!result.success) {
+  for (const log of result.logs) console.error(log);
+  process.exit(1);
+}
+
+console.log('Completed Build');

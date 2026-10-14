@@ -61,6 +61,16 @@ risk. A zero-length suffix or single-character alphabet cannot distinguish IDs
 within the same timestamp. Use a longer explicit suffix for higher volumes or a
 lower collision budget, and enforce uniqueness where required.
 
+## Package verification
+
+Run `bun run test:package` to build fresh output and smoke-test a local tarball.
+The check loads both public entry points, verifies the default 22-character payload,
+resource prefixes and alphabet exports, and compiles a consumer against the packaged
+declarations with NodeNext and Bundler resolution.
+
+The `prepack` hook runs this build and check automatically for packaging and publishing;
+either failure stops the operation. This check does not publish a release.
+
 ## Installation
 
 ```shell

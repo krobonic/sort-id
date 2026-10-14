@@ -156,8 +156,7 @@ describe("sortId", () => {
 			randStrLength: 20,
 		});
 
-		// The random part uses numeric, timestamp is base36 so might have letters
-		expect(result).toBeDefined();
+		expect(result.slice(10)).toMatch(/^[0-9]{20}$/);
 	});
 
 	test("generates unique IDs on successive calls", () => {
@@ -222,5 +221,42 @@ describe("sortId", () => {
 		// Decimal timestamps are padded to 16 characters
 		expect(result).toHaveLength(16 + 16);
 		expect(result).toMatch(/^[0-9]+[a-z0-9]+$/);
+	});
+});
+
+describe("sortId input validation", () => {
+	test.each([
+		-1,
+		1.5,
+		NaN,
+		Infinity,
+		-Infinity,
+		Number.MAX_SAFE_INTEGER,
+		null,
+		"16",
+		true,
+	])("rejects invalid random length %s", (randStrLength) => {
+		expect(() => sortId({ randStrLength: randStrLength as number })).toThrow(
+			RangeError,
+		);
+	});
+	test.each([
+		null,
+		"36",
+		true,
+		-Infinity,
+	])("rejects invalid radix %s", (radix) => {
+		expect(() => sortId({ radix: radix as number })).toThrow(RangeError);
+	});
+	test.each([
+		"",
+		"aab",
+		"😀",
+		null,
+		123,
+	])("rejects invalid alphabet %j", (alphabet) => {
+		expect(() =>
+			sortId({ alphabet: alphabet as string, randStrLength: 0 }),
+		).toThrow();
 	});
 });

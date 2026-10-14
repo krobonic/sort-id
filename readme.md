@@ -138,3 +138,30 @@ const userId = sortId({
 });
 console.log(userId); // -> user_0001723456789012abcde1234567890f
 ```
+
+### Supported random inputs
+
+`randomString({ length, alphabet? })` is also exported from `sort-id`.
+`length` is required; `sortId` uses `randStrLength`, defaulting to 16.
+Both lengths must be numeric integers from 0 through the runtime's
+`node:buffer` `constants.MAX_STRING_LENGTH` (inclusive). Zero produces an empty
+random suffix. Negative, fractional, non-finite, out-of-range, and non-number
+lengths throw `RangeError`; values are never coerced. Large outputs remain
+subject to available memory.
+
+The default alphabet is `abcdefghijklmnopqrstuvwxyz0123456789`. Custom alphabets
+must be strings containing 1–256 distinct UTF-16 characters, excluding surrogate
+code units. BMP characters such as `£` are supported; emoji and other characters
+requiring surrogate pairs are not. Empty, duplicate-containing, oversized, or
+surrogate-containing alphabets throw `RangeError`; non-string alphabets throw
+`TypeError`. Alphabets are validated even for a zero length. A one-character
+alphabet is supported but provides no randomness in the output.
+
+Optional alphabet, radix, and random-length defaults apply only when omitted or
+`undefined`; explicit `null` is invalid. Radix values must be numbers and are
+never coerced from strings.
+
+Random characters use cryptographic bytes from `node:crypto.randomBytes` with
+rejection sampling: bytes outside the largest multiple of the alphabet size
+below or equal to 256 are discarded. Each alphabet character has equal selection
+probability. Randomness-source errors propagate to the caller.

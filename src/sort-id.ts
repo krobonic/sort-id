@@ -12,7 +12,7 @@ const DEFAULT_RADIX = 36;
 const MAX_TIMESTAMP = DEFAULT_RADIX ** 10 - 1;
 
 export const sortId = (params?: SortIdParams): string => {
-	const radix = params?.radix ?? DEFAULT_RADIX;
+	const radix = params?.radix === undefined ? DEFAULT_RADIX : params.radix;
 	if (!Number.isInteger(radix) || radix < 2 || radix > 36) {
 		throw new RangeError("radix must be an integer between 2 and 36");
 	}

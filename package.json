@@ -1,6 +1,6 @@
 {
   "name": "sort-id",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Time sortable, type-prefixed IDs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -28,8 +28,7 @@
     "prepack": "bun run build && node tests/package-smoke.mjs",
     "test:package": "npm run prepack",
     "test": "bun test && bun run test:types",
-    "test:types": "bun run build && tsc -p tests/types/tsconfig.nodenext.json && tsc -p tests/types/tsconfig.bundler.json",
-    "npm:publish": "bun publish"
+    "test:types": "bun run build && tsc -p tests/types/tsconfig.nodenext.json && tsc -p tests/types/tsconfig.bundler.json"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.15",

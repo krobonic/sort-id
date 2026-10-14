@@ -3,7 +3,7 @@ import { ALPHANUMERIC_UPPERCASE, NUMERIC } from "../alphabets";
 import { sortId } from "../sort-id";
 
 describe("sortId", () => {
-	test("pads default timestamps to exactly 10 base36 characters", () => {
+	test("pads timestamps to exactly 10 base36 characters", () => {
 		const now = spyOn(Date, "now");
 		try {
 			for (const [timestamp, encoded] of [
@@ -24,35 +24,23 @@ describe("sortId", () => {
 		}
 	});
 
-	test.each(
-		Array.from({ length: 35 }, (_, index) => index + 2),
-	)("uses a fixed width and preserves lexical ordering across every base%i boundary", (radix) => {
+	test("preserves lexical ordering across every base36 digit-width boundary", () => {
 		const maximum = 36 ** 10 - 1;
 		const timestamps = new Set([0, 1, maximum - 1, maximum]);
-		let width = 1;
-		for (
-			let power = BigInt(radix);
-			power <= BigInt(maximum);
-			power *= BigInt(radix)
-		) {
-			timestamps.add(Number(power) - 1);
-			timestamps.add(Number(power));
-			width++;
+		for (let exponent = 1; exponent < 10; exponent++) {
+			const boundary = 36 ** exponent;
+			timestamps.add(boundary - 1);
+			timestamps.add(boundary);
 		}
 		const ordered = [...timestamps].sort((a, b) => a - b);
 		const now = spyOn(Date, "now");
 		try {
 			const ids = ordered.map((timestamp) => {
 				now.mockReturnValue(timestamp);
-				const id = sortId({
-					radix,
-					prefix: "test_",
-					alphabet: "a",
-					randStrLength: 4,
-				});
-				expect(id).toHaveLength(5 + width + 4);
+				const id = sortId({ prefix: "test_", alphabet: "a", randStrLength: 4 });
+				expect(id).toHaveLength(19);
 				expect(id).toEndWith("aaaa");
-				expect(Number.parseInt(id.slice(5, 5 + width), radix)).toBe(timestamp);
+				expect(Number.parseInt(id.slice(5, 15), 36)).toBe(timestamp);
 				return id;
 			});
 			expect([...ids].reverse().sort()).toEqual(ids);
@@ -72,24 +60,10 @@ describe("sortId", () => {
 	])("rejects unsupported timestamp %s", (timestamp) => {
 		const now = spyOn(Date, "now").mockReturnValue(timestamp);
 		try {
-			for (const radix of [2, 10, 36]) {
-				expect(() => sortId({ radix })).toThrow(RangeError);
-			}
+			expect(() => sortId()).toThrow(RangeError);
 		} finally {
 			now.mockRestore();
 		}
-	});
-
-	test.each([
-		0,
-		1,
-		37,
-		-2,
-		2.5,
-		NaN,
-		Infinity,
-	])("rejects unsupported radix %s", (radix) => {
-		expect(() => sortId({ radix })).toThrow(RangeError);
 	});
 
 	test("generates an ID with default parameters", () => {
@@ -134,13 +108,12 @@ describe("sortId", () => {
 		{ randStrLength: undefined },
 		{ prefix: "user_" },
 		{ alphabet: NUMERIC },
-		{ radix: 10 },
 	])("uses 12 random characters by default with %j", (params) => {
 		const timestamp = 1723456789012;
 		const now = spyOn(Date, "now").mockReturnValue(timestamp);
 		try {
 			const result = sortId(params);
-			const timestampPart = `${params?.prefix ?? ""}${timestamp.toString(params?.radix ?? 36).padStart((36 ** 10 - 1).toString(params?.radix ?? 36).length, "0")}`;
+			const timestampPart = `${params?.prefix ?? ""}${timestamp.toString(36).padStart(10, "0")}`;
 			expect(result).toStartWith(timestampPart);
 			expect(result.slice(timestampPart.length)).toMatch(
 				params?.alphabet === NUMERIC ? /^[0-9]{12}$/ : /^[a-z0-9]{12}$/,
@@ -214,14 +187,6 @@ describe("sortId", () => {
 
 		expect(uniqueIds.size).toBe(100);
 	});
-
-	test("generates an ID with custom radix for timestamp", () => {
-		const result = sortId({ radix: 10 });
-		// Should be numeric timestamp + 12 random chars
-		// Decimal timestamps are padded to 16 characters
-		expect(result).toHaveLength(16 + 12);
-		expect(result).toMatch(/^[0-9]+[a-z0-9]+$/);
-	});
 });
 
 describe("sortId input validation", () => {
@@ -239,14 +204,6 @@ describe("sortId input validation", () => {
 		expect(() => sortId({ randStrLength: randStrLength as number })).toThrow(
 			RangeError,
 		);
-	});
-	test.each([
-		null,
-		"36",
-		true,
-		-Infinity,
-	])("rejects invalid radix %s", (radix) => {
-		expect(() => sortId({ radix: radix as number })).toThrow(RangeError);
 	});
 	test.each([
 		"",

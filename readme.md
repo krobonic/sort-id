@@ -22,11 +22,11 @@ it easy to identify what type of resource the ID identifies at a glance.
 ### Timestamp Prefixing
 
 After the optional type prefix comes the timestamp. This is the time in milliseconds since the
-UNIX epoch. The value is converted to a string using a radix (base), which defaults to base36.
-Timestamps are zero-padded to a fixed width: 10 characters in base36 by default.
+UNIX epoch. The value is encoded in base36.
+Timestamps are zero-padded to a fixed width: 10 characters in base36.
 For example, timestamp 35 becomes `000000000z` and timestamp 36 becomes `0000000010`,
 so lexical ordering remains chronological across digit-width boundaries. IDs with the same
-prefix and radix sort by timestamp; IDs created during the same millisecond are ordered by
+prefix sort by timestamp; IDs created during the same millisecond are ordered by
 the random suffix. Clock changes can also affect creation order.
 
 Supported timestamps are integer milliseconds from 0 through 3,656,158,440,062,975
@@ -35,6 +35,7 @@ throw `RangeError`.
 
 This changes the ID format: existing unpadded IDs should not be mixed with padded IDs
 when relying on lexical ordering. Consumers that parse IDs should use the new timestamp width.
+The `radix` option has been removed; all timestamps now use base36.
 
 ### Random suffix length and collisions
 
@@ -45,7 +46,7 @@ with collision resistance. Explicit `randStrLength` values still control suffix 
 With the default 36-character alphabet, there are `36 ** 12` possible suffixes
 (about `4.74 × 10^18`, or 62 bits of randomness). Assuming independent, uniform
 random draws, the birthday approximation for at least one collision among `n`
-IDs sharing the same timestamp, prefix, radix, and alphabet is
+IDs sharing the same timestamp, prefix, and alphabet is
 `1 - exp(-n * (n - 1) / (2 * 36 ** 12))`. When the probability is small, this is
 approximately `n * (n - 1) / (2 * 36 ** 12)`: about `1.05 × 10^-13` for 1,000 IDs
 in one millisecond, or `1.05 × 10^-7` for 1,000,000 IDs in one millisecond.
@@ -112,8 +113,8 @@ console.log(userId); // -> user_00ly9c8a9x9owvod33sqoiezw
 
 ### With a custom alphabet
 
-Customises the alphabet used for the random portion of the ID. The default radix for the timestamp
-portion is base36 (alphanumeric lowercase), and the default alphabet is also alphanumeric lowercase.
+Customises the alphabet used for the random portion of the ID. The timestamp always uses
+base36 (alphanumeric lowercase), and the default random alphabet is also alphanumeric lowercase.
 
 #### Use a built-in alphabet:
 
@@ -138,31 +139,6 @@ const userId = sortId({
 console.log(userId); // -> user_00ly75rgn1$$£$£!@£$!@£
 ```
 
-### With a custom radix
-
-Customises the radix used for encoding the timestamp. Defaults to 36. Supported radices
-are integers from 2 through 36; other values throw `RangeError`. Each radix uses the
-number of digits needed to encode the shared maximum timestamp (`36 ** 10 - 1`),
-with leading zeroes added to shorter values. Changing the radix changes the width:
-
-| Radix | Timestamp width |
-| --- | --- |
-| 2 | 52 |
-| 8 | 18 |
-| 10 | 16 |
-| 16 | 13 |
-| 36 | 10 |
-
-For any supported radix, the width is `(36 ** 10 - 1).toString(radix).length`.
-
-```ts
-const userId = sortId({
-  prefix: 'user_',
-  radix: 10,
-});
-console.log(userId); // -> user_0001723456789012abcde1234567
-```
-
 ### Supported random inputs
 
 `randomString({ length, alphabet? })` is also exported from `sort-id`.
@@ -181,9 +157,8 @@ surrogate-containing alphabets throw `RangeError`; non-string alphabets throw
 `TypeError`. Alphabets are validated even for a zero length. A one-character
 alphabet is supported but provides no randomness in the output.
 
-Optional alphabet, radix, and random-length defaults apply only when omitted or
-`undefined`; explicit `null` is invalid. Radix values must be numbers and are
-never coerced from strings.
+Optional alphabet and random-length defaults apply only when omitted or
+`undefined`; explicit `null` is invalid.
 
 Random characters use cryptographic bytes from `node:crypto.randomBytes` with
 rejection sampling: bytes outside the largest multiple of the alphabet size

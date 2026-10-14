@@ -2,12 +2,14 @@
 
 Time sortable, type-prefixed IDs. Each ID consists of a type prefix, followed by an
 encoded timestamp (which can be alphabetically sorted), and finally a random string.
+The random suffix now defaults to 16 characters (previously 5). Explicit
+`randStrLength` values are unchanged; use `randStrLength: 5` to retain the previous length.
 
 Examples
 
 ```ts
-userly7512nco0QIs; // Generated first, sorts first alphabetically
-userly751tfxst6Vw;
+userly7512nc998e2abcde123456; // Generated first, sorts first alphabetically
+userly751tfxst6vwabcde123456;
 ```
 
 ## Why
@@ -50,7 +52,7 @@ identifies.
 const userId = sortId({
   prefix: 'user_',
 });
-console.log(userId); // -> user_ly757uw3998e2
+console.log(userId); // -> user_ly757uw3998e2abcde123456
 ```
 
 ### Without a prefix
@@ -59,7 +61,7 @@ Generates an ID without any type prefix.
 
 ```ts
 const userId = sortId();
-console.log(userId); // -> ly75c94jTosOQ
+console.log(userId); // -> ly75c94jtosoqabcde123456
 ```
 
 ### With a custom random string length
@@ -90,7 +92,7 @@ const userId = sortId({
   prefix: 'user_',
   alphabet: ALPHANUMERIC_UPPERCASE,
 });
-console.log(userId); // -> user_ly76dhmoPM3IP
+console.log(userId); // -> user_ly76dhmoPM3IPABCDE123456
 ```
 
 #### Bring your own alphabet:
@@ -100,7 +102,7 @@ const userId = sortId({
   prefix: 'user_',
   alphabet: '!@£$',
 });
-console.log(userId); // -> user_ly75rgn1$$£$£
+console.log(userId); // -> user_ly75rgn1$$£$£!@£$!@£$!@£
 ```
 
 ### With a custom radix
@@ -112,5 +114,5 @@ const userId = sortId({
   prefix: 'user_',
   radix: 10,
 });
-console.log(userId); // -> user_1723456789012abcde
+console.log(userId); // -> user_1723456789012abcde1234567890f
 ```

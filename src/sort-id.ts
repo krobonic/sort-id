@@ -7,7 +7,7 @@ export type SortIdParams = {
   radix?: number;
 };
 
-const DEFAULT_RAN_STR_LENGTH = 5;
+const DEFAULT_RAN_STR_LENGTH = 16;
 const DEFAULT_RADIX = 36;
 
 export const sortId = (params?: SortIdParams): string => {

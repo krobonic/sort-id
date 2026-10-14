@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { ALPHANUMERIC_UPPERCASE, NUMERIC } from "../alphabets";
 import { sortId } from "../sort-id";
 
@@ -12,7 +12,7 @@ describe("sortId", () => {
 
 	test("generates an ID without prefix (timestamp + random)", () => {
 		const result = sortId();
-		// Should be base36 timestamp + 5 random chars (default)
+		// Should be base36 timestamp + 16 random chars (default)
 		expect(result).toMatch(/^[a-z0-9]+$/);
 	});
 
@@ -22,25 +22,43 @@ describe("sortId", () => {
 		expect(result).toMatch(/^user_[a-z0-9]+$/);
 	});
 
-	test("generates an ID with custom random string length", () => {
-		const prefix = "test_";
-		const randStrLength = 10;
-		const result = sortId({ prefix, randStrLength });
-
-		// Remove prefix to get the ID part
-		const idPart = result.substring(prefix.length);
-		// ID part should be timestamp (base36) + random string
-		// We can't predict timestamp length exactly, but random part is at the end
-		expect(idPart.length).toBeGreaterThanOrEqual(randStrLength);
+	test.each([
+		0, 1, 5, 10, 20,
+	])("preserves an explicit random string length of %i", (randStrLength) => {
+		const timestamp = 1723456789012;
+		const now = spyOn(Date, "now").mockReturnValue(timestamp);
+		try {
+			const result = sortId({ prefix: "test_", randStrLength });
+			const timestampPart = `test_${timestamp.toString(36)}`;
+			expect(result).toStartWith(timestampPart);
+			expect(result.slice(timestampPart.length)).toMatch(
+				new RegExp(`^[a-z0-9]{${randStrLength}}$`),
+			);
+		} finally {
+			now.mockRestore();
+		}
 	});
 
-	test("default random string length is 5", () => {
-		const result1 = sortId();
-		const result2 = sortId();
-
-		// Both should have same total structure: timestamp + 5 random chars
-		expect(result1.length).toBeGreaterThanOrEqual(5);
-		expect(result2.length).toBeGreaterThanOrEqual(5);
+	test.each([
+		undefined,
+		{},
+		{ randStrLength: undefined },
+		{ prefix: "user_" },
+		{ alphabet: NUMERIC },
+		{ radix: 10 },
+	])("uses 16 random characters by default with %j", (params) => {
+		const timestamp = 1723456789012;
+		const now = spyOn(Date, "now").mockReturnValue(timestamp);
+		try {
+			const result = sortId(params);
+			const timestampPart = `${params?.prefix ?? ""}${timestamp.toString(params?.radix ?? 36)}`;
+			expect(result).toStartWith(timestampPart);
+			expect(result.slice(timestampPart.length)).toMatch(
+				params?.alphabet === NUMERIC ? /^[0-9]{16}$/ : /^[a-z0-9]{16}$/,
+			);
+		} finally {
+			now.mockRestore();
+		}
 	});
 
 	test("generates an ID with custom alphabet", () => {
@@ -111,9 +129,9 @@ describe("sortId", () => {
 
 	test("generates an ID with custom radix for timestamp", () => {
 		const result = sortId({ radix: 10 });
-		// Should be numeric timestamp + 5 random chars
+		// Should be numeric timestamp + 16 random chars
 		// Numeric timestamp in ms is 13 chars
-		expect(result.length).toBeGreaterThanOrEqual(13 + 5);
+		expect(result).toHaveLength(13 + 16);
 		expect(result).toMatch(/^[0-9]+[a-z0-9]+$/);
 	});
 });

@@ -7,8 +7,10 @@ export type SortIdParams = {
 };
 
 const DEFAULT_RAN_STR_LENGTH = 12;
-const TIMESTAMP_WIDTH = 8;
-const MAX_TIMESTAMP = 36 ** TIMESTAMP_WIDTH - 1;
+const TIMESTAMP_ALPHABET =
+	'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const TIMESTAMP_WIDTH = 7;
+const MAX_TIMESTAMP = TIMESTAMP_ALPHABET.length ** TIMESTAMP_WIDTH - 1;
 
 export const sortId = (params?: SortIdParams): string => {
 	const timestamp = Date.now();
@@ -21,9 +23,15 @@ export const sortId = (params?: SortIdParams): string => {
 			`timestamp must be an integer between 0 and ${MAX_TIMESTAMP}`,
 		);
 	}
-	const encodedTimestamp = timestamp
-		.toString(36)
-		.padStart(TIMESTAMP_WIDTH, '0');
+	// Alphabet order matches JavaScript string comparison.
+	let remaining = timestamp;
+	let encodedTimestamp = '';
+	for (let i = 0; i < TIMESTAMP_WIDTH; i++) {
+		encodedTimestamp =
+			TIMESTAMP_ALPHABET[remaining % TIMESTAMP_ALPHABET.length] +
+			encodedTimestamp;
+		remaining = Math.floor(remaining / TIMESTAMP_ALPHABET.length);
+	}
 
 	const randStr = randomString({
 		alphabet: params?.alphabet,

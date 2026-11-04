@@ -27,16 +27,20 @@ afterEach(() => {
 });
 
 describe('sortId', () => {
-	test('pads timestamps to exactly 8 base36 characters', () => {
+	test('pads timestamps to exactly 7 base62 characters', () => {
 		const now = spyOn(Date, 'now');
 		try {
 			for (const [timestamp, encoded] of [
-				[0, '00000000'],
-				[35, '0000000z'],
-				[36, '00000010'],
-				[36 ** 7 - 1, '0zzzzzzz'],
-				[36 ** 7, '10000000'],
-				[36 ** 8 - 1, 'zzzzzzzz'],
+				[0, '0000000'],
+				[9, '0000009'],
+				[10, '000000A'],
+				[35, '000000Z'],
+				[36, '000000a'],
+				[61, '000000z'],
+				[62, '0000010'],
+				[56800235583, '0zzzzzz'],
+				[56800235584, '1000000'],
+				[3521614606207, 'zzzzzzz'],
 			] as const) {
 				now.mockReturnValue(timestamp);
 				expect(sortId({ randStrLength: 0 })).toBe(encoded);
@@ -46,11 +50,22 @@ describe('sortId', () => {
 		}
 	});
 
-	test('preserves lexical ordering across every base36 digit-width boundary', () => {
-		const maximum = 36 ** 8 - 1;
-		const timestamps = new Set([0, 1, maximum - 1, maximum]);
-		for (let exponent = 1; exponent < 8; exponent++) {
-			const boundary = 36 ** exponent;
+	test('preserves lexical ordering across every base62 digit-width boundary', () => {
+		const maximum = 62 ** 7 - 1;
+		const timestamps = new Set([
+			0,
+			1,
+			9,
+			10,
+			35,
+			36,
+			61,
+			62,
+			maximum - 1,
+			maximum,
+		]);
+		for (let exponent = 1; exponent < 7; exponent++) {
+			const boundary = 62 ** exponent;
 			timestamps.add(boundary - 1);
 			timestamps.add(boundary);
 		}
@@ -60,9 +75,18 @@ describe('sortId', () => {
 			const ids = ordered.map((timestamp) => {
 				now.mockReturnValue(timestamp);
 				const id = sortId({ prefix: 'test_', alphabet: 'a', randStrLength: 4 });
-				expect(id).toHaveLength(17);
+				expect(id).toHaveLength(16);
 				expect(id).toEndWith('aaaa');
-				expect(Number.parseInt(id.slice(5, 13), 36)).toBe(timestamp);
+				expect(
+					[...id.slice(5, 12)].reduce(
+						(value, digit) =>
+							value * 62 +
+							'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.indexOf(
+								digit,
+							),
+						0,
+					),
+				).toBe(timestamp);
 				return id;
 			});
 			expect([...ids].reverse().sort()).toEqual(ids);
@@ -73,7 +97,7 @@ describe('sortId', () => {
 
 	test.each([
 		-1,
-		36 ** 8,
+		62 ** 7,
 		Number.MAX_SAFE_INTEGER,
 		0.5,
 		NaN,
@@ -92,20 +116,20 @@ describe('sortId', () => {
 		const result = sortId();
 		expect(result).toBeDefined();
 		expect(typeof result).toBe('string');
-		expect(result).toHaveLength(20);
+		expect(result).toHaveLength(19);
 	});
 
 	test('generates an ID without prefix (timestamp + random)', () => {
 		const result = sortId();
-		// Should be base36 timestamp + 12 random chars (default)
-		expect(result).toMatch(/^[a-z0-9]+$/);
+		// Should be base62 timestamp + 12 random chars (default)
+		expect(result).toMatch(/^[A-Za-z0-9]+$/);
 	});
 
 	test('generates an ID with prefix', () => {
 		const result = sortId({ prefix: 'user_' });
-		expect(result).toHaveLength(25);
+		expect(result).toHaveLength(24);
 		expect(result).toStartWith('user_');
-		expect(result).toMatch(/^user_[a-z0-9]+$/);
+		expect(result).toMatch(/^user_[A-Za-z0-9]+$/);
 	});
 
 	test.each([
@@ -115,7 +139,7 @@ describe('sortId', () => {
 		const now = spyOn(Date, 'now').mockReturnValue(timestamp);
 		try {
 			const result = sortId({ prefix: 'test_', randStrLength });
-			const timestampPart = `test_${timestamp.toString(36).padStart(8, '0')}`;
+			const timestampPart = 'test_ULEH33M';
 			expect(result).toStartWith(timestampPart);
 			expect(result).toHaveLength(timestampPart.length + randStrLength);
 			expect(result.slice(timestampPart.length)).toMatch(
@@ -137,7 +161,7 @@ describe('sortId', () => {
 		const now = spyOn(Date, 'now').mockReturnValue(timestamp);
 		try {
 			const result = sortId(params);
-			const timestampPart = `${params?.prefix ?? ''}${timestamp.toString(36).padStart(8, '0')}`;
+			const timestampPart = `${params?.prefix ?? ''}ULEH33M`;
 			expect(result).toStartWith(timestampPart);
 			expect(result.slice(timestampPart.length)).toMatch(
 				params?.alphabet === NUMERIC ? /^[0-9]{12}$/ : /^[a-z0-9]{12}$/,
@@ -153,7 +177,7 @@ describe('sortId', () => {
 			randStrLength: 20,
 		});
 
-		expect(result.slice(8)).toMatch(/^[0-9]{20}$/);
+		expect(result.slice(7)).toMatch(/^[0-9]{20}$/);
 	});
 
 	test('maintains consistent format with all parameters', () => {
@@ -167,23 +191,21 @@ describe('sortId', () => {
 		expect(result).toStartWith('u_');
 
 		const idPart = result.substring(2); // Remove 'u_'
-		expect(idPart.slice(0, 8)).toBe(
-			FROZEN_TIMESTAMP.toString(36).padStart(8, '0'),
-		);
-		expect(idPart.slice(8)).toBe('ABCDEF');
-		expect(result).toHaveLength(16);
+		expect(idPart.slice(0, 7)).toBe('ULEH33M');
+		expect(idPart.slice(7)).toBe('ABCDEF');
+		expect(result).toHaveLength(15);
 	});
 
-	test('format matches expected pattern: prefix + timestamp(base36) + random', () => {
+	test('format matches expected pattern: prefix + timestamp(base62) + random', () => {
 		const result = sortId({ prefix: 'u_', randStrLength: 6 });
 
-		// Should match: u_<base36><random6chars>
-		expect(result).toMatch(/^u_[a-z0-9]+$/);
+		// Should match: u_<base62><random6chars>
+		expect(result).toMatch(/^u_[A-Za-z0-9]+$/);
 
 		const parts = result.split('_');
 		expect(parts.length).toBe(2);
 		expect(parts[0]).toBe('u');
-		expect(parts[1]).toHaveLength(14);
+		expect(parts[1]).toHaveLength(13);
 	});
 });
 
@@ -242,10 +264,10 @@ describe('sortId ordering guarantees', () => {
 	});
 
 	test('sorts across every timestamp width boundary regardless of suffix', () => {
-		for (let exponent = 1; exponent < 8; exponent++) {
-			clock.mockReturnValue(36 ** exponent - 1);
+		for (let exponent = 1; exponent < 7; exponent++) {
+			clock.mockReturnValue(62 ** exponent - 1);
 			const before = sortId({ prefix: 'user_', alphabet: 'z' });
-			clock.mockReturnValue(36 ** exponent);
+			clock.mockReturnValue(62 ** exponent);
 			const after = sortId({ prefix: 'user_', alphabet: 'a' });
 			expect([after, before].sort()).toEqual([before, after]);
 		}

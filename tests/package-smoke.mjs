@@ -67,16 +67,16 @@ try {
       ALPHANUMERIC_LOWERCASE: "abcdefghijklmnopqrstuvwxyz0123456789",
       NUMERIC: "0123456789",
     });
-    Date.now = () => 36;
+    Date.now = () => 62;
     for (const prefix of ["", "user_", "order_"]) {
       const id = sortId({ prefix });
-      assert.equal(id.length, prefix.length + 20);
-      assert.ok(id.startsWith(prefix + "00000010"));
-      assert.match(id.slice(prefix.length + 8), /^[a-z0-9]{12}$/);
+      assert.equal(id.length, prefix.length + 19);
+      assert.ok(id.startsWith(prefix + "0000010"));
+      assert.match(id.slice(prefix.length + 7), /^[a-z0-9]{12}$/);
     }
-    assert.equal(sortId().length, 20);
+    assert.equal(sortId().length, 19);
     for (const alphabet of Object.values(alphabets)) {
-      const suffix = sortId({ alphabet }).slice(8);
+      const suffix = sortId({ alphabet }).slice(7);
       assert.equal(suffix.length, 12);
       assert.ok([...suffix].every(character => alphabet.includes(character)));
       const random = randomString({ alphabet, length: 12 });

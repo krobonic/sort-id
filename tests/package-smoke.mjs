@@ -17,7 +17,11 @@ const run = (command, args, cwd = root) =>
 	execFileSync(command, args, {
 		cwd,
 		encoding: 'utf8',
-		env: { ...process.env, npm_config_cache: join(temporary, 'npm-cache') },
+		env: {
+			...process.env,
+			npm_config_cache: join(temporary, 'npm-cache'),
+			NPM_CONFIG_CACHE: join(temporary, 'npm-cache'),
+		},
 	});
 
 try {
@@ -33,6 +37,7 @@ try {
 	);
 	const files = new Set(packed.files.map(({ path }) => path));
 	for (const required of [
+		'dist/cli.js',
 		'dist/index.js',
 		'dist/alphabets.js',
 		'dist/index.d.ts',
@@ -67,16 +72,16 @@ try {
       ALPHANUMERIC_LOWERCASE: "abcdefghijklmnopqrstuvwxyz0123456789",
       NUMERIC: "0123456789",
     });
-    Date.now = () => 36;
+    Date.now = () => 62;
     for (const prefix of ["", "user_", "order_"]) {
       const id = sortId({ prefix });
-      assert.equal(id.length, prefix.length + 22);
-      assert.ok(id.startsWith(prefix + "0000000010"));
-      assert.match(id.slice(prefix.length + 10), /^[a-z0-9]{12}$/);
+      assert.equal(id.length, prefix.length + 19);
+      assert.ok(id.startsWith(prefix + "0000010"));
+      assert.match(id.slice(prefix.length + 7), /^[a-z0-9]{12}$/);
     }
-    assert.equal(sortId().length, 22);
+    assert.equal(sortId().length, 19);
     for (const alphabet of Object.values(alphabets)) {
-      const suffix = sortId({ alphabet }).slice(10);
+      const suffix = sortId({ alphabet }).slice(7);
       assert.equal(suffix.length, 12);
       assert.ok([...suffix].every(character => alphabet.includes(character)));
       const random = randomString({ alphabet, length: 12 });
@@ -86,6 +91,47 @@ try {
   `,
 	);
 	run(process.execPath, ['smoke.mjs'], consumer);
+
+	assert.match(
+		run(process.execPath, ['node_modules/sort-id/dist/cli.js'], consumer),
+		/^[0-9A-Za-z]{7}[a-z0-9]{12}\n$/,
+	);
+	// Install the tarball to verify the real executable links and package runners.
+	run(
+		'npm',
+		[
+			'install',
+			'--offline',
+			'--ignore-scripts',
+			'--no-audit',
+			'--no-fund',
+			join(temporary, packed.filename),
+		],
+		consumer,
+	);
+	for (const [command, args] of [
+		['npm', ['exec', '--offline', '--', 'sort-id']],
+		['bunx', ['--no-install', 'sort-id']],
+	]) {
+		assert.match(
+			run(
+				command,
+				[
+					...args,
+					'--prefix',
+					'cli_',
+					'--length',
+					'4',
+					'--alphabet',
+					'x',
+					'--time',
+					'62',
+				],
+				consumer,
+			),
+			/^cli_0000010xxxx\n$/,
+		);
+	}
 
 	// Compile a real consumer against the declarations shipped in the tarball.
 	for (const file of [

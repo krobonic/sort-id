@@ -1,5 +1,5 @@
 const result = await Bun.build({
-	entrypoints: ['src/index.ts', 'src/alphabets.ts'],
+	entrypoints: ['src/index.ts', 'src/alphabets.ts', 'src/cli.ts'],
 	outdir: 'dist',
 	format: 'esm',
 	target: 'node',

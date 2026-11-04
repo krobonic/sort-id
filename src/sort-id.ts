@@ -4,6 +4,7 @@ export type SortIdParams = {
 	prefix?: string;
 	alphabet?: string;
 	randStrLength?: number;
+	time?: Date;
 };
 
 const DEFAULT_RAN_STR_LENGTH = 12;
@@ -13,7 +14,7 @@ const TIMESTAMP_WIDTH = 7;
 const MAX_TIMESTAMP = TIMESTAMP_ALPHABET.length ** TIMESTAMP_WIDTH - 1;
 
 export const sortId = (params?: SortIdParams): string => {
-	const timestamp = Date.now();
+	const timestamp = params?.time?.getTime() ?? Date.now();
 	if (
 		!Number.isSafeInteger(timestamp) ||
 		timestamp < 0 ||

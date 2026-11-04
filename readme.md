@@ -73,6 +73,43 @@ either failure stops the operation. This check does not publish a release.
 $ npm i sort-id
 ```
 
+## Command-line usage
+
+Generate one ID using npm or Bun:
+
+```shell
+npx sort-id
+npm exec -- sort-id --prefix user_
+bunx sort-id --prefix user_
+```
+
+Customise the random suffix with `--length` and `--alphabet`:
+
+```shell
+bunx sort-id --prefix order_ --length 16 --alphabet 0123456789
+```
+
+Override the timestamp with `--time` (`-t`), using a date string or Unix
+milliseconds. Use an ISO 8601 date with an explicit timezone for consistent results:
+
+```shell
+bunx sort-id --time 2026-11-04T12:00:00Z --prefix event_
+npx sort-id --time 62 --length 0
+# 0000010
+```
+
+Omitting `--time` uses the current time. The library's supported timestamp range
+also applies to overrides.
+
+Options also have short forms: `-p` (prefix), `-l` (length), `-a` (alphabet),
+and `-h` (help). Run `npx sort-id --help` for usage. Prefixes are used exactly
+as supplied, so include any desired separator, such as `user_`.
+
+The command writes one ID and a newline to stdout. Invalid options or values
+write an error to stderr and exit with status 1. Length controls only the random
+suffix (default 12); the timestamp always adds 7 characters. The same length
+and alphabet validation rules as the library apply.
+
 ## Usage
 
 ### Import
@@ -103,6 +140,24 @@ Generates an ID without any type prefix.
 const userId = sortId();
 console.log(userId); // -> UHYRVrvtosoqabcde12
 ```
+
+### With a custom timestamp
+
+Pass a `Date` as `time` to override the current timestamp, for example when
+creating an ID for an existing event:
+
+```ts
+const eventId = sortId({
+  prefix: 'event_',
+  time: new Date('2026-11-04T12:00:00Z'),
+});
+```
+
+Omitting `time` or passing `undefined` uses the current time. An explicit date
+uses its Unix timestamp in milliseconds; invalid dates and dates outside the
+supported range (0 through 3,521,614,606,207 milliseconds) throw `RangeError`.
+Only the timestamp portion changes; the random suffix is generated as usual.
+IDs sort by the supplied timestamp, which may differ from their creation order.
 
 ### With a custom random string length
 

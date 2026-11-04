@@ -1,12 +1,14 @@
 {
   "name": "sort-id",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Time sortable, type-prefixed IDs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
   "type": "module",
-  "bin": { "sort-id": "dist/cli.js" },
+  "bin": {
+    "sort-id": "dist/cli.js"
+  },
   "files": ["dist/*.js", "dist/*.d.ts"],
   "repository": "krobonic/sort-id",
   "author": "Callum Thomson",

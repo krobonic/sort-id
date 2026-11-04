@@ -33,11 +33,17 @@ The timestamp always contains 7 base62 characters.`);
 		}
 		let time: Date | undefined;
 		if (values.time !== undefined) {
-			time = new Date(
-				/^-?\d+(?:\.\d+)?$/.test(values.time)
-					? Number(values.time)
-					: values.time,
-			);
+			if (/^-?\d+(?:\.\d+)?$/.test(values.time)) {
+				const timestamp = Number(values.time);
+				if (!Number.isSafeInteger(timestamp) || timestamp < 0) {
+					throw new Error(
+						'--time must be a non-negative integer in milliseconds',
+					);
+				}
+				time = new Date(timestamp);
+			} else {
+				time = new Date(values.time);
+			}
 			if (Number.isNaN(time.getTime())) {
 				throw new Error(
 					'--time must be a valid date string or Unix milliseconds',

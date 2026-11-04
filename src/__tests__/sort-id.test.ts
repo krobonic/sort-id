@@ -209,6 +209,44 @@ describe('sortId', () => {
 	});
 });
 
+describe('sortId time override', () => {
+	test.each([
+		[0, '0000000'],
+		[61, '000000z'],
+		[62, '0000010'],
+		[3521614606207, 'zzzzzzz'],
+	] as const)('encodes explicit timestamp %i', (timestamp, encoded) => {
+		const time = new Date(timestamp);
+		expect(
+			sortId({ time, prefix: 'event_', alphabet: 'x', randStrLength: 4 }),
+		).toBe(`event_${encoded}xxxx`);
+		expect(time.getTime()).toBe(timestamp);
+		expect(clock).not.toHaveBeenCalled();
+	});
+
+	test('uses the current clock when time is omitted or undefined', () => {
+		expect(sortId({ randStrLength: 0 })).toBe('ULEH33M');
+		expect(sortId({ time: undefined, randStrLength: 0 })).toBe('ULEH33M');
+		expect(clock).toHaveBeenCalledTimes(2);
+	});
+
+	test.each([
+		-1,
+		3521614606208,
+		NaN,
+		Infinity,
+	])('rejects unsupported explicit timestamp %s without falling back to the clock', (timestamp) => {
+		expect(() => sortId({ time: new Date(timestamp) })).toThrow(RangeError);
+		expect(clock).not.toHaveBeenCalled();
+	});
+
+	test('orders IDs by the overridden time regardless of generation order', () => {
+		const later = sortId({ time: new Date(62), alphabet: 'a' });
+		const earlier = sortId({ time: new Date(61), alphabet: 'z' });
+		expect([later, earlier].sort()).toEqual([earlier, later]);
+	});
+});
+
 describe('sortId input validation', () => {
 	test.each([
 		-1,

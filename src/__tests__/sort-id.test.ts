@@ -27,18 +27,16 @@ afterEach(() => {
 });
 
 describe('sortId', () => {
-	test('pads timestamps to exactly 10 base36 characters', () => {
+	test('pads timestamps to exactly 8 base36 characters', () => {
 		const now = spyOn(Date, 'now');
 		try {
 			for (const [timestamp, encoded] of [
-				[0, '0000000000'],
-				[35, '000000000z'],
-				[36, '0000000010'],
-				[36 ** 8 - 1, '00zzzzzzzz'],
-				[36 ** 8, '0100000000'],
-				[36 ** 9 - 1, '0zzzzzzzzz'],
-				[36 ** 9, '1000000000'],
-				[36 ** 10 - 1, 'zzzzzzzzzz'],
+				[0, '00000000'],
+				[35, '0000000z'],
+				[36, '00000010'],
+				[36 ** 7 - 1, '0zzzzzzz'],
+				[36 ** 7, '10000000'],
+				[36 ** 8 - 1, 'zzzzzzzz'],
 			] as const) {
 				now.mockReturnValue(timestamp);
 				expect(sortId({ randStrLength: 0 })).toBe(encoded);
@@ -49,9 +47,9 @@ describe('sortId', () => {
 	});
 
 	test('preserves lexical ordering across every base36 digit-width boundary', () => {
-		const maximum = 36 ** 10 - 1;
+		const maximum = 36 ** 8 - 1;
 		const timestamps = new Set([0, 1, maximum - 1, maximum]);
-		for (let exponent = 1; exponent < 10; exponent++) {
+		for (let exponent = 1; exponent < 8; exponent++) {
 			const boundary = 36 ** exponent;
 			timestamps.add(boundary - 1);
 			timestamps.add(boundary);
@@ -62,9 +60,9 @@ describe('sortId', () => {
 			const ids = ordered.map((timestamp) => {
 				now.mockReturnValue(timestamp);
 				const id = sortId({ prefix: 'test_', alphabet: 'a', randStrLength: 4 });
-				expect(id).toHaveLength(19);
+				expect(id).toHaveLength(17);
 				expect(id).toEndWith('aaaa');
-				expect(Number.parseInt(id.slice(5, 15), 36)).toBe(timestamp);
+				expect(Number.parseInt(id.slice(5, 13), 36)).toBe(timestamp);
 				return id;
 			});
 			expect([...ids].reverse().sort()).toEqual(ids);
@@ -75,7 +73,7 @@ describe('sortId', () => {
 
 	test.each([
 		-1,
-		36 ** 10,
+		36 ** 8,
 		Number.MAX_SAFE_INTEGER,
 		0.5,
 		NaN,
@@ -94,7 +92,7 @@ describe('sortId', () => {
 		const result = sortId();
 		expect(result).toBeDefined();
 		expect(typeof result).toBe('string');
-		expect(result).toHaveLength(22);
+		expect(result).toHaveLength(20);
 	});
 
 	test('generates an ID without prefix (timestamp + random)', () => {
@@ -105,7 +103,7 @@ describe('sortId', () => {
 
 	test('generates an ID with prefix', () => {
 		const result = sortId({ prefix: 'user_' });
-		expect(result).toHaveLength(27);
+		expect(result).toHaveLength(25);
 		expect(result).toStartWith('user_');
 		expect(result).toMatch(/^user_[a-z0-9]+$/);
 	});
@@ -117,7 +115,7 @@ describe('sortId', () => {
 		const now = spyOn(Date, 'now').mockReturnValue(timestamp);
 		try {
 			const result = sortId({ prefix: 'test_', randStrLength });
-			const timestampPart = `test_${timestamp.toString(36).padStart(10, '0')}`;
+			const timestampPart = `test_${timestamp.toString(36).padStart(8, '0')}`;
 			expect(result).toStartWith(timestampPart);
 			expect(result).toHaveLength(timestampPart.length + randStrLength);
 			expect(result.slice(timestampPart.length)).toMatch(
@@ -139,7 +137,7 @@ describe('sortId', () => {
 		const now = spyOn(Date, 'now').mockReturnValue(timestamp);
 		try {
 			const result = sortId(params);
-			const timestampPart = `${params?.prefix ?? ''}${timestamp.toString(36).padStart(10, '0')}`;
+			const timestampPart = `${params?.prefix ?? ''}${timestamp.toString(36).padStart(8, '0')}`;
 			expect(result).toStartWith(timestampPart);
 			expect(result.slice(timestampPart.length)).toMatch(
 				params?.alphabet === NUMERIC ? /^[0-9]{12}$/ : /^[a-z0-9]{12}$/,
@@ -155,7 +153,7 @@ describe('sortId', () => {
 			randStrLength: 20,
 		});
 
-		expect(result.slice(10)).toMatch(/^[0-9]{20}$/);
+		expect(result.slice(8)).toMatch(/^[0-9]{20}$/);
 	});
 
 	test('maintains consistent format with all parameters', () => {
@@ -169,11 +167,11 @@ describe('sortId', () => {
 		expect(result).toStartWith('u_');
 
 		const idPart = result.substring(2); // Remove 'u_'
-		expect(idPart.slice(0, 10)).toBe(
-			FROZEN_TIMESTAMP.toString(36).padStart(10, '0'),
+		expect(idPart.slice(0, 8)).toBe(
+			FROZEN_TIMESTAMP.toString(36).padStart(8, '0'),
 		);
-		expect(idPart.slice(10)).toBe('ABCDEF');
-		expect(result).toHaveLength(18);
+		expect(idPart.slice(8)).toBe('ABCDEF');
+		expect(result).toHaveLength(16);
 	});
 
 	test('format matches expected pattern: prefix + timestamp(base36) + random', () => {
@@ -185,7 +183,7 @@ describe('sortId', () => {
 		const parts = result.split('_');
 		expect(parts.length).toBe(2);
 		expect(parts[0]).toBe('u');
-		expect(parts[1]).toHaveLength(16);
+		expect(parts[1]).toHaveLength(14);
 	});
 });
 
@@ -244,7 +242,7 @@ describe('sortId ordering guarantees', () => {
 	});
 
 	test('sorts across every timestamp width boundary regardless of suffix', () => {
-		for (let exponent = 1; exponent < 10; exponent++) {
+		for (let exponent = 1; exponent < 8; exponent++) {
 			clock.mockReturnValue(36 ** exponent - 1);
 			const before = sortId({ prefix: 'user_', alphabet: 'z' });
 			clock.mockReturnValue(36 ** exponent);

@@ -7,7 +7,7 @@ export type SortIdParams = {
 };
 
 const DEFAULT_RAN_STR_LENGTH = 12;
-const TIMESTAMP_WIDTH = 10;
+const TIMESTAMP_WIDTH = 8;
 const MAX_TIMESTAMP = 36 ** TIMESTAMP_WIDTH - 1;
 
 export const sortId = (params?: SortIdParams): string => {

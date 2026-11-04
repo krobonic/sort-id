@@ -70,13 +70,13 @@ try {
     Date.now = () => 36;
     for (const prefix of ["", "user_", "order_"]) {
       const id = sortId({ prefix });
-      assert.equal(id.length, prefix.length + 22);
-      assert.ok(id.startsWith(prefix + "0000000010"));
-      assert.match(id.slice(prefix.length + 10), /^[a-z0-9]{12}$/);
+      assert.equal(id.length, prefix.length + 20);
+      assert.ok(id.startsWith(prefix + "00000010"));
+      assert.match(id.slice(prefix.length + 8), /^[a-z0-9]{12}$/);
     }
-    assert.equal(sortId().length, 22);
+    assert.equal(sortId().length, 20);
     for (const alphabet of Object.values(alphabets)) {
-      const suffix = sortId({ alphabet }).slice(10);
+      const suffix = sortId({ alphabet }).slice(8);
       assert.equal(suffix.length, 12);
       assert.ok([...suffix].every(character => alphabet.includes(character)));
       const random = randomString({ alphabet, length: 12 });

@@ -7,8 +7,8 @@ The random suffix defaults to 12 characters.
 Examples
 
 ```ts
-user00ly7512nc998e2abcde12; // Generated first, sorts first alphabetically
-user00ly751tfxst6vwabcde12;
+user_ly7512nc998e2abcde12; // Generated first, sorts first alphabetically
+user_ly751tfxst6vwabcde12;
 ```
 
 ## Why
@@ -22,19 +22,20 @@ it easy to identify what type of resource the ID identifies at a glance.
 
 After the optional type prefix comes the timestamp. This is the time in milliseconds since the
 UNIX epoch. The value is encoded in base36.
-Timestamps are zero-padded to a fixed width: 10 characters in base36.
-For example, timestamp 35 becomes `000000000z` and timestamp 36 becomes `0000000010`,
+Timestamps are zero-padded to a fixed width: 8 characters in base36.
+For example, timestamp 35 becomes `0000000z` and timestamp 36 becomes `00000010`,
 so lexical ordering remains chronological across digit-width boundaries. IDs with the same
 prefix sort by timestamp; IDs created during the same millisecond are ordered by
 the random suffix. Clock changes can also affect creation order.
 
-Supported timestamps are integer milliseconds from 0 through 3,656,158,440,062,975
-(`36 ** 10 - 1`), inclusive. Negative, fractional, non-finite, and larger timestamps
-throw `RangeError`.
+Supported timestamps are integer milliseconds from 0 through 2,821,109,907,455
+(`36 ** 8 - 1`), inclusive. The timestamp range ends on 25 May 2059 at
+17:38:27.455 UTC; overflow is rejected rather than expanding the timestamp width.
+Negative, fractional, non-finite, and larger timestamps throw `RangeError`.
 
 ### Random suffix length and collisions
 
-The default payload is 22 characters: a 10-character base36 timestamp plus a
+The default payload is 20 characters: an 8-character base36 timestamp plus a
 12-character random suffix, excluding the optional prefix. This balances compactness
 with collision resistance. Set `randStrLength` to customise the suffix length.
 
@@ -59,7 +60,7 @@ lower collision budget, and enforce uniqueness where required.
 ## Package verification
 
 Run `bun run test:package` to build fresh output and smoke-test a local tarball.
-The check loads both public entry points, verifies the default 22-character payload,
+The check loads both public entry points, verifies the default 20-character payload,
 resource prefixes and alphabet exports, and compiles a consumer against the packaged
 declarations with NodeNext and Bundler resolution.
 
@@ -91,7 +92,7 @@ identifies.
 const userId = sortId({
   prefix: 'user_',
 });
-console.log(userId); // -> user_00ly757uw3998e2abcde12
+console.log(userId); // -> user_ly757uw3998e2abcde12
 ```
 
 ### Without a prefix
@@ -100,7 +101,7 @@ Generates an ID without any type prefix.
 
 ```ts
 const userId = sortId();
-console.log(userId); // -> 00ly75c94jtosoqabcde12
+console.log(userId); // -> ly75c94jtosoqabcde12
 ```
 
 ### With a custom random string length
@@ -113,7 +114,7 @@ const userId = sortId({
   prefix: 'user_',
   randStrLength: 15,
 });
-console.log(userId); // -> user_00ly9c8a9x9owvod33sqoiezw
+console.log(userId); // -> user_ly9c8a9x9owvod33sqoiezw
 ```
 
 ### With a custom alphabet
@@ -131,7 +132,7 @@ const userId = sortId({
   prefix: 'user_',
   alphabet: ALPHANUMERIC_UPPERCASE,
 });
-console.log(userId); // -> user_00ly76dhmoPM3IPABCDE12
+console.log(userId); // -> user_ly76dhmoPM3IPABCDE12
 ```
 
 #### Bring your own alphabet:
@@ -141,7 +142,7 @@ const userId = sortId({
   prefix: 'user_',
   alphabet: '!@£$',
 });
-console.log(userId); // -> user_00ly75rgn1$$£$£!@£$!@£
+console.log(userId); // -> user_ly75rgn1$$£$£!@£$!@£
 ```
 
 ### Supported random inputs
